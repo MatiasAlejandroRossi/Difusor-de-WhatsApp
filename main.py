@@ -6,7 +6,7 @@ import time
 
 def iniciar_sesion():
     # Configura el WebDriver utilizando la clase Service
-    service = Service('C:/Users/matii/Desktop/Directorios/PROYECTOS/Difusor de WhatsApp/chromedriver-win64/chromedriver.exe')  # Cambia 'ruta/a/chromedriver' a la ruta donde está tu ChromeDriver
+    service = Service('C:/Users/matii/Desktop/Directorios/PROYECTOS/chromedriver-win64/chromedriver.exe')  # Cambia a la ruta donde está tu ChromeDriver
     driver = webdriver.Chrome(service=service)
     driver.get("https://web.whatsapp.com/")
     
