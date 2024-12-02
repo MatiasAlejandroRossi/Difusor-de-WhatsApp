@@ -5,6 +5,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import os
 
 def iniciar_sesion():
     # Configurar el WebDriver utilizando la clase Service
@@ -62,5 +63,56 @@ def enviar_mensaje_a_miembro(driver, miembro, mensaje, nombre_grupo):
         print(f"No se pudi hacer clic en 'Enviar mensaje a' para {miembro}. Error: {e}")
         return False
     input_box = WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located(By.XPATH, '//div[@contenteditable="true"][]')
+        EC.presence_of_element_located(By.XPATH, '//div[@contenteditable="true"][@role="textbox][@data-tab="10"]')
     )
+    input_box.send_keys(mensaje)
+    input_box.send_keys(Keys.ENTER)
+    print(f"Mensaje enviado a: {miembro}")
+    driver.get("https://web.whatsapp.com/")
+    time.sleep(3)
+    buscar_grupo(driver, nombre_grupo)
+
+    return True
+
+def cargar_miembros_procesados():
+    if os.path.exists("miembros_procesados.txt"):
+        with open("miembros_procesados.txt", "r", encoding="utf-8") as file:
+            return set(file.read().splitlines())
+    return set()
+
+def guardar_miembro_procesado(miembro):
+    with open("miembros_procesados.txt", "a", encoding="utf-8") as file:
+        file.write(f"{miembro}\n")
+
+def main():
+    driver = iniciar_sesion()
+    nombre_grupo = "Los Abandonados"  # Cambiar por el nombre del grupo en el que se quiera difundir.
+    mensaje = "Holiiiis, no respondan, mensaje de prueba. LO HICE :P MUAJAJAJAJAJ. Hackeamos bancos?"
+    miembros_procesados = cargar_miembros_procesados()
+
+    try:
+        buscar_grupo(driver, nombre_grupo)
+        miembros = obtener_miembros_del_grupo(driver)
+
+        mensajes_enviados = 0
+        for miembro in miembros_procesados:
+            if enviar_mensaje_a_miembro(driver, miembro, mensaje, nombre_grupo):
+                guardar_miembro_procesado(miembro)
+                mensajes_enviados += 1
+                time.sleep(2)
+
+        # Verificación de envíos completos
+        miembros_faltantes = set(miembros) - cargar_miembros_procesados()
+        if not miembros_faltantes:
+            print(f"Programa finalizado con éxito. Se enviaron {mensajes_enviados} mensajes.")
+        else:
+            print(f"Algunos miembros no recibieron el mensaje: {miembros_faltantes}")
+    except Exception as e:
+        print(f"Ocurrió un error: {e}")
+    finally:
+        # Asegurar el cierre del navegador
+        driver.quit()
+        print("Navegador cerrado correctamente.")
+
+if __name__ == "__main__":
+    main()
