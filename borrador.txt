@@ -1,0 +1,11 @@
+"""
+DEPENDENCIAS:
+pip install pandas
+pip install openpyxl
+pip install webbrowser
+pip install pyautogui
+
+Archivo excel:
+numeros_grupo_wpp.xlsx
+
+"""
