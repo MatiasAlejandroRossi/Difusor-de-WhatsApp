@@ -1,118 +1,124 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-import os
 
 def iniciar_sesion():
-    # Configurar el WebDriver utilizando la clase Service
-    service = Service('C:/Users/matii/Desktop/Directorios/PROYECTOS/chromedriver-win64/chromedriver.exe')  # Cambia a la ruta dónde está tu ChromeDriver
-    driver = webdriver.Chrome(service=service)
+    driver = webdriver.Chrome()
     driver.get("https://web.whatsapp.com/")
-
-    # Da tiempo para escanear el código QR
     print("Escanea el código QR para iniciar sesión en WhatsApp Web.")
-    WebDriverWait(driver, 60).until(
-        EC.presence_of_element_located(By.XPATH, '//div[@contenteditable="true"][@role="textbox"][data-tab="3"]')
+    WebDriverWait(driver, 120).until(
+        EC.presence_of_element_located((By.XPATH, '//div[@role="textbox"]'))
     )
     print("Inicio de sesión exitoso.")
     return driver
 
-def buscar_grupo(driver, nombre_grupo):
-    # Busca el grupo en el cuadro de búsqueda.
-    search_box = driver.find_element(By.XPATH, '//div[@contenteditable="true"][@role="textbox"][@data-base="3"]')
-    search_box.clear()
-    search_box.send_keys(nombre_grupo)
-    search_box.send_keys(Keys.ENTER)
-    time.sleep(3)  # Espera para cargar el grupo.
-
-def obtener_miembros_del_grupo(driver):
-    # Abre la información del grupo
-    group_info_button = driver.find_element(By.XPATH, '//header//div[@role="button][data-tab="3"]')
-    group_info_button.click()
-    time.sleep(2)
-
-    # Si existe un botón "Ver todos", hacer click
-    try:
-        ver_todos_button = driver.find_element(By.XPATH, '//div[text()="Ver todos"]')
-        ver_todos_button.click()
-        time.sleep(2)
-    except:
-        print("No es necesario hacer clic en 'Ver todos'.")
-    
-    miembros = []
-    miembros_elements = driver.find_elements(By.XPATH, '//div[@data-testid="cell-frame_container"]//span[@dir="auto"]')
-    for miembro in miembros_elements:
-        miembros.append(miembro.text)
-    print(f"Miembros obtenidos: {miembros}")
-    return miembros
-
-def enviar_mensaje_a_miembro(driver, miembro, mensaje, nombre_grupo):
-    miembro_element = driver.find_element(By.XPATH, f'//span[@dir="auto" and text()="{miembro}"]')
-    miembro_element.click()
-    time.sleep(2)
-
-    try:
-        enviar_mensaje_button = driver.find_element(By.XPATH, '//li[@role="button"]//span[contains(text(), "Enviar mensaje a")]')
-        enviar_mensaje_button.click()
-        time.sleep(2)
-    except Exception as e:
-        print(f"No se pudi hacer clic en 'Enviar mensaje a' para {miembro}. Error: {e}")
-        return False
-    input_box = WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located(By.XPATH, '//div[@contenteditable="true"][@role="textbox][@data-tab="10"]')
+def buscar_grupo(driver, grupo):
+    # Buscar el cuadro de búsqueda
+    search_box = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true" and @role="textbox" and @data-tab="3"]'))
     )
-    input_box.send_keys(mensaje)
-    input_box.send_keys(Keys.ENTER)
-    print(f"Mensaje enviado a: {miembro}")
-    driver.get("https://web.whatsapp.com/")
-    time.sleep(3)
-    buscar_grupo(driver, nombre_grupo)
+    search_box.clear()
+    search_box.send_keys(grupo)
+    search_box.send_keys(Keys.ENTER)
+    print(f"Grupo '{grupo}' encontrado y seleccionado.")
 
-    return True
+def acceder_info_grupo(driver):
+    # Acceder al botón de información del grupo
+    info_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, '//div[@class="x1c4vz4f x2lah0s xdl72j9 x1i4ejaq x1y332i5" and @role="button"]'))
+    )
+    info_button.click()
+    print("Información del grupo abierta.")
 
-def cargar_miembros_procesados():
-    if os.path.exists("miembros_procesados.txt"):
-        with open("miembros_procesados.txt", "r", encoding="utf-8") as file:
-            return set(file.read().splitlines())
-    return set()
+def expandir_lista(driver):
+    try:
+        # Verificar si aparece el botón "Ver todos"
+        ver_todos_button = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.XPATH, '//div[@class="_alzb  xnnlda6 xh8yej3 x8x1vt3 x78zum5 x6s0dn4 x16cd2qt x1z0qo99" and @role="button"]'))
+        )
+        ver_todos_button.click()
+        print("Lista expandida.")
+    except:
+        print("Botón 'Ver todos' no encontrado o ya expandido.")
 
-def guardar_miembro_procesado(miembro):
-    with open("miembros_procesados.txt", "a", encoding="utf-8") as file:
-        file.write(f"{miembro}\n")
+def enviar_mensaje(driver, mensaje):
+    # Localizar el cuadro de texto y enviar mensaje
+    message_box = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true" and @tabindex="10" and contains(@class, "x1hx0egp")]'))
+    )
+    message_box.send_keys(mensaje)
+    message_box.send_keys(Keys.ENTER)
+    print("Mensaje enviado.")
+
+def procesar_miembros(driver, mensaje, procesados):
+    while True:
+        # Obtener elementos dinámicos
+        elementos = driver.find_elements(By.XPATH, '//div[contains(@class, "x10l6tqk xh8yej3 x1g42fcv") and @role="button"]')
+        nuevos = False
+
+        for elemento in elementos:
+            style = elemento.get_attribute("style")
+            if not style:
+                continue
+
+            # Extraer el valor de z-index
+            try:
+                z_index = int(style.split("z-index: ")[1].split(";")[0])
+            except (IndexError, ValueError):
+                continue
+
+            if z_index in procesados:
+                continue  # Ya procesado
+
+            nuevos = True
+            procesados.add(z_index)
+            print(f"Procesando elemento con z-index: {z_index}")
+
+            # Hacer clic en el miembro
+            elemento.click()
+            time.sleep(2)
+
+            # Enviar mensaje
+            enviar_mensaje(driver, mensaje)
+
+            # Volver atrás
+            driver.back()
+            time.sleep(2)
+            break  # Reiniciar la búsqueda después de procesar un miembro
+
+        if not nuevos:
+            try:
+                # Deslizar hacia abajo para cargar más elementos dinámicos
+                lista = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.XPATH, '//div[contains(@class, "scrollable-list-class")]'))
+                )
+                driver.execute_script("arguments[0].scrollTop += 300;", lista)
+                time.sleep(2)
+            except:
+                print("No hay más elementos por procesar. Finalizando.")
+                break
 
 def main():
+    grupo = "Ing. Sistemas - 1k9"
+    mensaje = "Hola"
+    procesados = set()
+
     driver = iniciar_sesion()
-    nombre_grupo = "Los Abandonados"  # Cambiar por el nombre del grupo en el que se quiera difundir.
-    mensaje = "Holiiiis, no respondan, mensaje de prueba. LO HICE :P MUAJAJAJAJAJ. Hackeamos bancos?"
-    miembros_procesados = cargar_miembros_procesados()
-
+    
     try:
-        buscar_grupo(driver, nombre_grupo)
-        miembros = obtener_miembros_del_grupo(driver)
-
-        mensajes_enviados = 0
-        for miembro in miembros_procesados:
-            if enviar_mensaje_a_miembro(driver, miembro, mensaje, nombre_grupo):
-                guardar_miembro_procesado(miembro)
-                mensajes_enviados += 1
-                time.sleep(2)
-
-        # Verificación de envíos completos
-        miembros_faltantes = set(miembros) - cargar_miembros_procesados()
-        if not miembros_faltantes:
-            print(f"Programa finalizado con éxito. Se enviaron {mensajes_enviados} mensajes.")
-        else:
-            print(f"Algunos miembros no recibieron el mensaje: {miembros_faltantes}")
+        while True:
+            buscar_grupo(driver, grupo)
+            acceder_info_grupo(driver)
+            expandir_lista(driver)
+            procesar_miembros(driver, mensaje, procesados)
     except Exception as e:
-        print(f"Ocurrió un error: {e}")
+        print(f"Error: {e}")
     finally:
-        # Asegurar el cierre del navegador
+        print("Programa finalizado.")
         driver.quit()
-        print("Navegador cerrado correctamente.")
 
 if __name__ == "__main__":
     main()
