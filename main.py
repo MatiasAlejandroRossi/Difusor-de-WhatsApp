@@ -12,10 +12,10 @@ for i in range(len(data)):
     celular = str(data.loc[i,'CEL']) # Convertir a string para que se añada al mensaje
     
     # Crear mensaje personalizado
-    mensaje = "Hola 🤗! ¿Estás listo para dar el siguiente paso hacia tu futuro académico ?👨🏻‍🎓✨. \
-    En el Instituto Teo🏫, te preparamos con cursos de matemática y fisica para tu ingreso \
-    a la facultad 📚📚. 100% VIRTUAL. Nuestros profesores expertos y materiales actualizados \
-    te brindarán el apoyo que necesitas para destacar 😎🔝🔝. Estamos a la espera de tu consulta😉."
+    mensaje = "¿Estás listo para dar el siguiente paso hacia tu futuro académico? 📚✨ \
+En el Instituto Teo, tenemos el curso perfecto para preparar tus exámenes de ingreso \
+a la facultad. Nuestros profesores expertos y materiales actualizados te brindarán \
+el apoyo que necesitas para destacar."
     
     # Abrir una nueva pestaña para entrar a WhatsApp Web
     # Opción 1: Si te abre WhastApp Web directamente en Google Chrome
